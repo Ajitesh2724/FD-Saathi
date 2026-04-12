@@ -1,0 +1,20 @@
+# ── Environment variables (NEVER upload these) ──
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# ── Node ──
+node_modules/
+dist/
+.DS_Store
+
+# ── VS Code ──
+.vscode/
