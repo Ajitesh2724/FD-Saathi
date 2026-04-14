@@ -1,10 +1,13 @@
 # app/utils/gemini_service.py
 
 import os
+import certifi
 import json
 import google.generativeai as genai
 from app.data.fd_data import FD_BANKS, JARGON_DICT
 from app.utils.calculator import calculate_maturity, format_inr, compare_rates_for_tenure
+
+os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
 
 # Configure Gemini on import
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -109,7 +112,7 @@ def chat_with_fd_saathi(
     """
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=build_system_prompt(),
         )
 
