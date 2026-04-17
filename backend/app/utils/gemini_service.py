@@ -2,12 +2,17 @@
 
 import os
 import certifi
+os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Explicitly load .env from backend folder
+load_dotenv(Path(__file__).parent.parent.parent / ".env")
 import json
 import google.generativeai as genai
 from app.data.fd_data import FD_BANKS, JARGON_DICT
 from app.utils.calculator import calculate_maturity, format_inr, compare_rates_for_tenure
 
-os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
 
 # Configure Gemini on import
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
