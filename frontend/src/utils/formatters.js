@@ -11,8 +11,8 @@ export const formatINR = (amount) => {
 
 // Tenure months to readable label
 export const tenureLabel = (months) => {
-  if (months < 12) return `${months} महीने`;
-  if (months === 12) return `1 साल`;
+  if (months < 12) return `${months} महीने`;    
+  if (months === 12) return `1 साल`;   
   if (months === 24) return `2 साल`;
   if (months === 36) return `3 साल`;
   return `${months} महीने`;
@@ -21,6 +21,7 @@ export const tenureLabel = (months) => {
 // Language display names
 export const LANGUAGES = [
   { code: 'hindi',    label: 'हिंदी',    flag: '🇮🇳' },
+  { code: 'english',  label: 'English',  flag: '🇬🇧' },
   { code: 'bhojpuri', label: 'भोजपुरी', flag: '🎯' },
   { code: 'awadhi',   label: 'अवधी',    flag: '✨' },
 ];
@@ -28,10 +29,16 @@ export const LANGUAGES = [
 // Suggested questions per language
 export const SUGGESTIONS = {
   hindi: [
-    'FD kya hota hai?',
-    'Suryoday Bank mein 8.50% matlab kya?',
-    'Mera paisa safe rahega?',
-    'Best rate kaun sa bank deta hai?',
+    'FD क्या होता है?',
+    'सबसे अच्छा ब्याज दर कौन सा बैंक देता है?',
+    'मेरा पैसा सुरक्षित रहेगा?',
+    '₹50,000 पर कितना मिलेगा?',
+  ],
+  english: [
+    'What is a Fixed Deposit?',
+    'Which bank gives the best FD rate?',
+    'Is my money safe in Small Finance Banks?',
+    'How much will I earn on ₹50,000?',
   ],
   bhojpuri: [
     'FD का मतलब का बा?',

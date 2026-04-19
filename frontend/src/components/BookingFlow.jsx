@@ -263,10 +263,35 @@ const BookingFlow = ({ onClose, onSendMessage }) => {
                 ))}
               </div>
             </div>
+            <a href={`https://wa.me/?text=${encodeURIComponent(
+    `🏦 *FD Booking Confirmed!*\n\n` +
+    `📋 Booking ID: ${booking.booking_id}\n` +
+    `🏦 Bank: ${booking.bank_name_hindi}\n` +
+    `💰 Amount: ${booking.principal_formatted}\n` +
+    `📈 Rate: ${booking.annual_rate}% p.a.\n` +
+    `📅 Tenure: ${booking.tenure_months} months\n` +
+    `✅ Maturity: ${booking.maturity_formatted}\n\n` +
+    `🔒 DICGC Insured - Government Guaranteed\n` +
+    `Booked via FD Saathi 🎯`
+  )}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{
+    display: 'block', width: '100%', padding: '14px',
+    background: '#25D366', color: 'white',
+    borderRadius: '12px', textDecoration: 'none',
+    fontSize: '15px', fontWeight: '600',
+    textAlign: 'center', marginBottom: '8px',
+  }}
+>
+  📱 WhatsApp पर Share करें
+</a>
+
             <button onClick={onClose} style={{
               width: '100%', padding: '14px', background: '#1a6b3c',
               color: 'white', border: 'none', borderRadius: '12px',
               fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+
             }}>
               Done ✓
             </button>
