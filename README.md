@@ -1,16 +1,11 @@
 # 🏦 FD Saathi — एफडी साथी
 ### Your Vernacular Fixed Deposit Advisor for Bharat
 
-<div align="center">
-**Deployed Link: **
-
-> ⚠️ **Live deployment link will be added here once deployed.**
-
-</div>
+Deployed Link: Live deployment link will be added here once deployed.
 
 ---
 
-## 📌 What is FD Saathi?
+##  What is FD Saathi?
 
 FD Saathi is an **AI-powered Fixed Deposit advisor** built for first-time and semi-urban investors across India — especially those who speak Hindi, Bhojpuri, or Awadhi and feel left out of formal financial tools.
 
@@ -22,39 +17,40 @@ Built for a hackathon, designed for real-world use.
 
 ## ✨ Features
 
-### 🤖 Multilingual AI Chat
+###  Multilingual AI Chat
 Powered by Google Gemini 1.5 Flash. The AI detects whether you write in **Hindi, Bhojpuri, Awadhi, or English** and responds naturally in that exact dialect — no switching needed.
 
-### 🧮 Smart FD Calculator
-Interactive sidebar calculator with a **bank selector** — choose any bank from the full list and see live maturity calculations with senior citizen bonus support.
-
-### 🪜 FD Laddering Planner
-A first-of-its-kind feature for Indian retail investors. Split your total investment across 2-5 FDs with staggered maturities so you always have liquidity. Auto-suggests the top-N banks by rate, with a full bank picker so you can override any suggestion.
-
-### 🧾 TDS Calculator
-Know exactly how much tax will be deducted on your FD interest. Includes Form 15G/15H guidance, PAN card advice, and slab-based breakdowns — fully multilingual.
-
-### 📁 FD Portfolio Tracker
-Add, track, and delete your real FDs. See a visual progress bar for each FD, days remaining to maturity, interest earned, and a mini bar chart comparing all your FDs.
-
-### 📍 Branch Finder
-Find the nearest branch of any bank using live OpenStreetMap data. Includes helpline numbers, email, official branch locator links, and a full required-documents checklist for opening an FD.
-
-### 🎬 Demo Mode
-One-click demo that walks through a complete FD conversation so you can understand the product instantly without typing.
-
-### 📊 Live Rate Ticker
-A scrolling ticker at the top shows real-time FD rates across all banks in the app.
-
-### 🎤 Voice Input
+###  Voice Input
 Speak your question in Hindi or English — the mic button transcribes your voice directly into the chat input using the browser's Speech Recognition API.
 
-### 🔒 DICGC Safety
+###  Smart FD Calculator
+Interactive sidebar calculator with a **bank selector** — choose any bank from the full list and see live maturity calculations with senior citizen bonus support.
+
+###  FD Laddering Planner
+A first-of-its-kind feature for Indian retail investors. Split your total investment across 2-5 FDs with staggered maturities so you always have liquidity. Auto-suggests the top-N banks by rate, with a full bank picker so you can override any suggestion.
+
+###  TDS Calculator
+Know exactly how much tax will be deducted on your FD interest. Includes Form 15G/15H guidance, PAN card advice, and slab-based breakdowns — fully multilingual.
+
+###  FD Portfolio Tracker
+Add, track, and delete your real FDs. See a visual progress bar for each FD, days remaining to maturity, interest earned, and a mini bar chart comparing all your FDs.
+
+###  Branch Finder
+Find the nearest branch of any bank using live OpenStreetMap data. Includes helpline numbers, email, official branch locator links, and a full required-documents checklist for opening an FD.
+
+###  Demo Mode
+One-click demo that walks through a complete FD conversation so you can understand the product instantly without typing.
+
+###  Live Rate Ticker
+A scrolling ticker at the top shows real-time FD rates across all banks in the app.
+
+
+###  DICGC Safety
 Every recommendation reminds users that their deposits are insured up to ₹5 lakh under DICGC — a key trust signal for first-time investors.
 
 ---
 
-## 🗂 Project Structure
+##  Project Structure
 
 ```
 FD-Saathi/
@@ -106,7 +102,7 @@ FD-Saathi/
 
 ---
 
-## 🛠 Local Setup
+##  Local Setup
 
 ### Prerequisites
 
@@ -220,7 +216,7 @@ Open [http://localhost:5173](http://localhost:5173) — FD Saathi should be runn
 
 ---
 
-## 🧠 Tech Stack
+##  Tech Stack
 
 ### Frontend
 | Technology | Purpose |
@@ -243,7 +239,7 @@ Open [http://localhost:5173](http://localhost:5173) — FD Saathi should be runn
 
 ---
 
-## 🏦 Supported Banks
+##  Supported Banks
 
 FD Saathi covers **28+ banks** across all categories:
 
@@ -256,7 +252,7 @@ FD Saathi covers **28+ banks** across all categories:
 
 ---
 
-## 🌍 Languages Supported
+##  Languages Supported
 
 | Language | Script | Region |
 |----------|--------|--------|
@@ -267,7 +263,7 @@ FD Saathi covers **28+ banks** across all categories:
 
 ---
 
-## 📡 API Endpoints
+##  API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -282,7 +278,7 @@ FD Saathi covers **28+ banks** across all categories:
 
 ---
 
-## 🔑 Environment Variables
+##  Environment Variables
 
 ### Backend (`backend/.env`)
 
@@ -298,7 +294,7 @@ FD Saathi covers **28+ banks** across all categories:
 
 ---
 
-## 🔒 Important Notes
+##  Important Notes
 
 **DICGC Insurance:** All banks listed in this app are DICGC-insured up to ₹5 lakh. This is real and verified. Users are always reminded of this.
 
