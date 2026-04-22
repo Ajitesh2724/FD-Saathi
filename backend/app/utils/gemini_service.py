@@ -47,14 +47,19 @@ from app.utils.calculator import calculate_maturity, format_inr, compare_rates_f
 logger = logging.getLogger(__name__)
 
 # ─── Model config ─────────────────────────────────────────────────────────────
-# gemini-1.5-flash: 1,500 req/day free  (vs 20/day for gemini-2.5-flash)
-# gemini-1.5-flash-8b: 4,000 req/day free (lighter, still very capable)
-PRIMARY_MODEL   = "gemini-1.5-flash"
-FALLBACK_MODEL  = "gemini-2.5-flash"
+# Free tier daily limits (as of 2025):
+#   gemini-1.5-flash-8b : 4,000 req/day, 15 RPM  ← best for free tier
+#   gemini-1.5-flash    : 1,500 req/day, 15 RPM
+#   gemini-2.5-flash    :   500 req/day, 10 RPM  ← save as last resort
+PRIMARY_MODEL   = "gemini-1.5-flash-8b"   # 4000/day — maximises free quota
+FALLBACK_MODEL  = "gemini-1.5-flash"      # 1500/day
+LAST_MODEL      = "gemini-2.5-flash"      # 500/day  — last resort
 
 # Retry settings
-MAX_RETRIES     = 3
-BASE_BACKOFF    = 2   # seconds — doubles on each retry
+MAX_RETRIES  = 2    # 2 attempts per model (not 3) — saves quota
+# CRITICAL: keep sleep < 25s so it stays under the frontend's 30s axios timeout
+MAX_SLEEP    = 22   # hard cap on sleep duration in seconds
+BASE_BACKOFF = 5    # start with 5s, then 10s
 
 # Configure Gemini — uses key loaded above
 genai.configure(api_key=_GEMINI_API_KEY)
@@ -224,8 +229,8 @@ def chat_with_fd_saathi(
             f"[END SYSTEM CONTEXT]\n\nUser message: {user_message}"
     )
 
-    # Try primary model with retries, then fallback model
-    models_to_try = [PRIMARY_MODEL, FALLBACK_MODEL]
+    # Try all three models with retries
+    models_to_try = [PRIMARY_MODEL, FALLBACK_MODEL, LAST_MODEL]
 
     for model_name in models_to_try:
         last_error = None
@@ -242,22 +247,24 @@ def chat_with_fd_saathi(
 
                 if _is_rate_limit(e):
                     if attempt < MAX_RETRIES:
-                        delay = _extract_retry_delay(error_str)
+                        # Cap sleep at MAX_SLEEP so we stay under the 30s frontend timeout
+                        raw_delay = _extract_retry_delay(error_str)
+                        delay = min(raw_delay, MAX_SLEEP)
                         logger.warning(
-                            "Rate limit on model=%s attempt=%d. Retrying in %.1fs...",
-                            model_name, attempt, delay,
+                            "Rate limit on model=%s attempt=%d. Sleeping %.1fs (capped at %ds)...",
+                            model_name, attempt, delay, MAX_SLEEP,
                         )
+                        print(f"[gemini_service] ⏳ Rate limited on {model_name}, sleeping {delay:.0f}s...")
                         time.sleep(delay)
                         continue
                     else:
-                        # Exhausted retries for this model — try next
                         logger.warning(
-                            "Rate limit exhausted for model=%s after %d attempts. "
-                            "Switching model...", model_name, MAX_RETRIES,
+                            "Rate limit exhausted for model=%s after %d attempts. Switching...",
+                            model_name, MAX_RETRIES,
                         )
                         break
                 else:
-                    # Non-rate-limit error — print so it's visible in uvicorn terminal
+                    # Non-rate-limit error — surface immediately
                     logger.error("Gemini error (model=%s): %s", model_name, error_str)
                     print(f"\n[gemini_service] ❌ ERROR model={model_name}: {type(e).__name__}: {error_str}\n")
                     return {

@@ -5,7 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
+  timeout: 90000, // 90s — must be > backend's MAX_SLEEP (22s) × MAX_RETRIES (2) × models (3)
 });
 
 // Send chat message

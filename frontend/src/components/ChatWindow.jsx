@@ -876,80 +876,96 @@ const ChatWindow = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  // ── VOICE INPUT (fixed) ────────────────────────────────────────────────────
-  const VOICE_LANG = { hindi: 'hi-IN', english: 'en-IN', bhojpuri: 'hi-IN', awadhi: 'hi-IN' };
+// ── VOICE INPUT ───────────────────────────────────────────────────────────
+const VOICE_LANG = { hindi: 'hi-IN', english: 'en-IN', bhojpuri: 'hi-IN', awadhi: 'hi-IN' };
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch { /* ignore */ }
-      recognitionRef.current = null;
+const stopListening = useCallback(() => {
+  if (recognitionRef.current) {
+    try { recognitionRef.current.abort(); } catch { /* ignore */ }
+    recognitionRef.current = null;
+  }
+  setIsListening(false);
+}, []);
+
+const startListening = useCallback(() => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Please use Chrome browser for voice input');
+    return;
+  }
+
+  // Stop any existing session cleanly first
+  if (recognitionRef.current) {
+    try { recognitionRef.current.abort(); } catch { /* ignore */ }
+    recognitionRef.current = null;
+  }
+
+  const r = new SR();
+  r.lang           = VOICE_LANG[language] || 'hi-IN';
+  r.continuous     = false;  // single utterance — much more reliable on Windows
+  r.interimResults = true;   // show words as they're being spoken
+  r.maxAlternatives = 1;
+
+  r.onstart = () => {
+    setIsListening(true);
+    setInput('');            // clear box when mic starts
+  };
+
+  r.onresult = (e) => {
+    // Build the transcript from all results
+    let transcript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
     }
+    setInput(transcript);   // update input box live as words come in
+  };
+
+  r.onspeechend = () => {
+    // User stopped speaking — stop recognition to get final result
+    try { r.stop(); } catch { /* ignore */ }
+  };
+
+  r.onend = () => {
     setIsListening(false);
-  }, []);
+    recognitionRef.current = null;
+    // Focus textarea so user can edit or press Enter to send
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
 
-  const startListening = useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      alert('Please use Chrome browser for voice input');
-      return;
+  r.onerror = (e) => {
+    setIsListening(false);
+    recognitionRef.current = null;
+    if (e.error === 'not-allowed') {
+      alert('Microphone permission required.\n\nClick the 🔒 icon in the browser address bar and allow microphone access.');
+    } else if (e.error === 'network') {
+      alert('Voice input needs internet connection. Please check your connection and try again.');
+    } else if (e.error === 'no-speech') {
+      // User didn't say anything — silent fail, just reset
+      setInput('');
+    } else if (e.error !== 'aborted') {
+      console.warn('Speech recognition error:', e.error);
     }
+  };
 
-    // Abort any existing session first
-    stopListening();
+  recognitionRef.current = r;
 
-    finalTranscriptRef.current = '';
-    setInput('');
-
-    const r = new SR();
-    r.lang            = VOICE_LANG[language] || 'hi-IN';
-    r.continuous      = true;
-    r.interimResults  = true;
-
-    r.onstart = () => setIsListening(true);
-
-    r.onresult = (e) => {
-      let interimText = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcript = e.results[i][0].transcript;
-        if (e.results[i].isFinal) {
-          finalTranscriptRef.current += transcript + ' ';
-        } else {
-          interimText += transcript;
-        }
-      }
-      // Show finalized text + current interim in the textarea
-      setInput((finalTranscriptRef.current + interimText).trim());
-    };
-
-    r.onend = () => {
-      setIsListening(false);
-      recognitionRef.current = null;
-      // If we captured something, focus the textarea so user can edit/send
-      if (finalTranscriptRef.current.trim()) {
-        setInput(finalTranscriptRef.current.trim());
-        setTimeout(() => inputRef.current?.focus(), 50);
-      }
-    };
-
-    r.onerror = (e) => {
-      setIsListening(false);
-      recognitionRef.current = null;
-      if (e.error === 'not-allowed') {
-        alert('Microphone permission required. Please allow microphone access in your browser.');
-      } else if (e.error !== 'aborted') {
-        // 'aborted' is expected when we call .stop() manually — don't alert for that
-        console.warn('Speech recognition error:', e.error);
-      }
-    };
-
-    recognitionRef.current = r;
+  try {
     r.start();
-  }, [language, stopListening]);
+  } catch (err) {
+    console.error('Failed to start recognition:', err);
+    setIsListening(false);
+    recognitionRef.current = null;
+  }
+}, [language]);
 
-  // Cleanup recognition on unmount
-  useEffect(() => {
-    return () => stopListening();
-  }, [stopListening]);
+// Cleanup on unmount
+useEffect(() => {
+  return () => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+    }
+  };
+}, []);
 
   // Nav button style helper
   const navStyle = (accent = false) => ({
