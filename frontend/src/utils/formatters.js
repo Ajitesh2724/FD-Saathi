@@ -22,8 +22,8 @@ export const tenureLabel = (months) => {
 export const LANGUAGES = [
   { code: 'hindi',    label: 'हिंदी',    flag: '🇮🇳' },
   { code: 'english',  label: 'English',  flag: '🇬🇧' },
-  { code: 'bhojpuri', label: 'भोजपुरी', flag: '🎯' },
-  { code: 'awadhi',   label: 'अवधी',    flag: '✨' },
+  { code: 'bhojpuri', label: 'भोजपुरी', flag: '' },
+  { code: 'awadhi',   label: 'अवधी',    flag: '' },
 ];
 
 // Suggested questions per language

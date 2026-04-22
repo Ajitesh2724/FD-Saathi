@@ -1,236 +1,166 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 
+// ── Design tokens (match ChatWindow) ─────────────────────────────────────────
+const C = {
+  bg:         '#0a120a',
+  surface:    'rgba(255,255,255,0.04)',
+  surfaceHi:  'rgba(255,255,255,0.07)',
+  border:     'rgba(74,222,128,0.12)',
+  borderHi:   'rgba(74,222,128,0.3)',
+  green:      '#4ade80',
+  greenDim:   'rgba(74,222,128,0.65)',
+  greenBg:    'rgba(74,222,128,0.1)',
+  gradGreen:  'linear-gradient(135deg,#14532d,#16a34a)',
+  text:       'rgba(255,255,255,0.85)',
+  textDim:    'rgba(255,255,255,0.45)',
+  textMuted:  'rgba(255,255,255,0.25)',
+  amber:      '#fbbf24',
+  amberBg:    'rgba(251,191,36,0.08)',
+  amberBorder:'rgba(251,191,36,0.25)',
+  red:        '#f87171',
+  redBg:      'rgba(248,113,113,0.08)',
+};
+
+// ── BANK DATA ─────────────────────────────────────────────────────────────────
 const SEARCHABLE_BANKS = [
-  { id: 'sbi',      name: 'State Bank of India', nameHindi: 'स्टेट बैंक ऑफ इंडिया', osmName: 'State Bank of India', color: '#1a237e', coverage: 'high' },
-  { id: 'pnb',      name: 'Punjab National Bank', nameHindi: 'पंजाब नेशनल बैंक', osmName: 'Punjab National Bank', color: '#b71c1c', coverage: 'high' },
-  { id: 'bob',      name: 'Bank of Baroda', nameHindi: 'बैंक ऑफ बड़ौदा', osmName: 'Bank of Baroda', color: '#f57f17', coverage: 'high' },
-  { id: 'hdfc',     name: 'HDFC Bank', nameHindi: 'HDFC बैंक', osmName: 'HDFC Bank', color: '#004c8c', coverage: 'high' },
-  { id: 'icici',    name: 'ICICI Bank', nameHindi: 'ICICI बैंक', osmName: 'ICICI Bank', color: '#b71c1c', coverage: 'high' },
-  { id: 'axis',     name: 'Axis Bank', nameHindi: 'एक्सिस बैंक', osmName: 'Axis Bank', color: '#880e4f', coverage: 'high' },
-  { id: 'canara',   name: 'Canara Bank', nameHindi: 'केनरा बैंक', osmName: 'Canara Bank', color: '#1b5e20', coverage: 'high' },
-  { id: 'union',    name: 'Union Bank', nameHindi: 'यूनियन बैंक', osmName: 'Union Bank of India', color: '#e65100', coverage: 'medium' },
-  { id: 'bandhan',  name: 'Bandhan Bank', nameHindi: 'बंधन बैंक', osmName: 'Bandhan Bank', color: '#4a148c', coverage: 'medium' },
-  { id: 'kotak',    name: 'Kotak Bank', nameHindi: 'कोटक बैंक', osmName: 'Kotak Mahindra Bank', color: '#e65100', coverage: 'medium' },
-  { id: 'suryoday', name: 'Suryoday SFB', nameHindi: 'सूर्योदय SFB', osmName: 'Suryoday Small Finance Bank', color: '#1a6b3c', coverage: 'low', website: 'https://www.suryodaybank.com/branch-locator' },
-  { id: 'ujjivan',  name: 'Ujjivan SFB', nameHindi: 'उज्जीवन SFB', osmName: 'Ujjivan Small Finance Bank', color: '#0277bd', coverage: 'low', website: 'https://www.ujjivansfb.in/branch-atm-locator' },
-  { id: 'au',       name: 'AU SFB', nameHindi: 'AU SFB', osmName: 'AU Small Finance Bank', color: '#c62828', coverage: 'low', website: 'https://www.aubank.in/branch-atm-locator' },
-  { id: 'utkarsh',  name: 'Utkarsh SFB', nameHindi: 'उत्कर्ष SFB', osmName: 'Utkarsh Small Finance Bank', color: '#2e7d32', coverage: 'low', website: 'https://www.utkarshbank.com/branch-atm-locator' },
-  { id: 'jana',     name: 'Jana SFB', nameHindi: 'जना SFB', osmName: 'Jana Small Finance Bank', color: '#6a1b9a', coverage: 'low', website: 'https://www.janabank.in/branch-locator' },
+  { id:'sbi',      name:'State Bank of India',          nameHindi:'स्टेट बैंक',       osmName:'State Bank of India',          color:'#60a5fa', coverage:'high',   phone:'1800 1234',        email:'customercare@sbi.co.in',                   website:'https://www.sbi.co.in',              website_locator:'https://www.sbi.co.in/web/branch-atm-locator' },
+  { id:'pnb',      name:'Punjab National Bank',         nameHindi:'पंजाब नेशनल बैंक', osmName:'Punjab National Bank',         color:'#f87171', coverage:'high',   phone:'1800 180 2222',    email:'care@pnb.co.in',                           website:'https://www.pnbindia.in',            website_locator:'https://www.pnbindia.in/locateus.html' },
+  { id:'bob',      name:'Bank of Baroda',               nameHindi:'बैंक ऑफ बड़ौदा',  osmName:'Bank of Baroda',               color:'#fb923c', coverage:'high',   phone:'1800 5700',        email:'customercare@bankofbaroda.com',            website:'https://www.bankofbaroda.in',         website_locator:'https://www.bankofbaroda.in/branch-and-atm-locator' },
+  { id:'hdfc',     name:'HDFC Bank',                    nameHindi:'HDFC बैंक',         osmName:'HDFC Bank',                    color:'#818cf8', coverage:'high',   phone:'1800 202 6161',    email:'support@hdfcbank.com',                     website:'https://www.hdfcbank.com',            website_locator:'https://www.hdfcbank.com/content/bbp/repositories/723fb80a-2dde-42a3-9793-7ae1be57c87f/?folderPath=/branch-locator/' },
+  { id:'icici',    name:'ICICI Bank',                   nameHindi:'ICICI बैंक',        osmName:'ICICI Bank',                   color:'#f87171', coverage:'high',   phone:'1800 1080',        email:'customer.care@icicibank.com',              website:'https://www.icicibank.com',           website_locator:'https://www.icicibank.com/branch-atm' },
+  { id:'axis',     name:'Axis Bank',                    nameHindi:'एक्सिस बैंक',      osmName:'Axis Bank',                    color:'#e879f9', coverage:'high',   phone:'1800 419 5959',    email:'support@axisbank.com',                     website:'https://www.axisbank.com',            website_locator:'https://www.axisbank.com/locate-us' },
+  { id:'canara',   name:'Canara Bank',                  nameHindi:'केनरा बैंक',        osmName:'Canara Bank',                  color:'#4ade80', coverage:'high',   phone:'1800 425 0018',    email:'ho_complaints@canarabank.com',             website:'https://www.canarabank.in',           website_locator:'https://www.canarabank.in/User_page.aspx?menuid=9&submenu=59' },
+  { id:'union',    name:'Union Bank',                   nameHindi:'यूनियन बैंक',       osmName:'Union Bank of India',          color:'#fb923c', coverage:'medium', phone:'1800 22 2244',     email:'unionbankcustomercare@unionbankofindia.com', website:'https://www.unionbankofindia.co.in', website_locator:'https://www.unionbankofindia.co.in/english/branch.aspx' },
+  { id:'bandhan',  name:'Bandhan Bank',                 nameHindi:'बंधन बैंक',         osmName:'Bandhan Bank',                 color:'#a78bfa', coverage:'medium', phone:'1800 258 8181',    email:'care@bandhanbank.com',                     website:'https://www.bandhanbank.com',         website_locator:'https://www.bandhanbank.com/branch-atm-locator' },
+  { id:'kotak',    name:'Kotak Bank',                   nameHindi:'कोटक बैंक',         osmName:'Kotak Mahindra Bank',          color:'#fb923c', coverage:'medium', phone:'1860 266 2666',    email:'service.delivery@kotak.com',               website:'https://www.kotak.com',               website_locator:'https://www.kotak.com/en/personal-banking/tools-and-calculators/branch-atm-locator.html' },
+  { id:'suryoday', name:'Suryoday SFB',                 nameHindi:'सूर्योदय SFB',      osmName:'Suryoday Small Finance Bank',  color:'#4ade80', coverage:'low',    phone:'1800 266 7711',    email:'customercare@suryodaybank.com',            website:'https://www.suryodaybank.com',         website_locator:'https://www.suryodaybank.com/branch-locator' },
+  { id:'ujjivan',  name:'Ujjivan SFB',                  nameHindi:'उज्जीवन SFB',       osmName:'Ujjivan Small Finance Bank',   color:'#60a5fa', coverage:'low',    phone:'1800 208 2121',    email:'support@ujjivansfb.in',                    website:'https://www.ujjivansfb.in',           website_locator:'https://www.ujjivansfb.in/branch-atm-locator' },
+  { id:'au',       name:'AU SFB',                       nameHindi:'AU SFB',             osmName:'AU Small Finance Bank',        color:'#f87171', coverage:'low',    phone:'1800 1200 1500',   email:'cs@aubank.in',                             website:'https://www.aubank.in',               website_locator:'https://www.aubank.in/branch-atm-locator' },
+  { id:'utkarsh',  name:'Utkarsh SFB',                  nameHindi:'उत्कर्ष SFB',       osmName:'Utkarsh Small Finance Bank',   color:'#4ade80', coverage:'low',    phone:'1800 123 0060',    email:'customercare@utkarshbank.com',             website:'https://www.utkarshbank.com',         website_locator:'https://www.utkarshbank.com/branch-atm-locator' },
+  { id:'jana',     name:'Jana SFB',                     nameHindi:'जना SFB',            osmName:'Jana Small Finance Bank',      color:'#a78bfa', coverage:'low',    phone:'1800 2080 2020',   email:'customercare@janabank.in',                 website:'https://www.janabank.in',             website_locator:'https://www.janabank.in/branch-locator' },
 ];
 
+const FD_DOCUMENTS = {
+  hindi:   { title:'FD खोलने के लिए जरूरी दस्तावेज', identity:{label:'🪪 पहचान प्रमाण (कोई एक)',items:['आधार कार्ड','पैन कार्ड','वोटर ID','पासपोर्ट','ड्राइविंग लाइसेंस']}, address:{label:'🏠 पते का प्रमाण (कोई एक)',items:['आधार कार्ड','बिजली/पानी का बिल (3 महीने से पुराना नहीं)','बैंक स्टेटमेंट','राशन कार्ड']}, photo:{label:'📷 फोटो',items:['2 पासपोर्ट साइज फोटो']}, pan:{label:'⚠️ पैन कार्ड (जरूरी)',items:['₹50,000 से ज्यादा की FD के लिए पैन अनिवार्य','पैन न होने पर फॉर्म 60/61 भरना होगा']}, note:'💡 पहले से खाता है तो — सिर्फ पैन + फोटो से भी हो सकता है।' },
+  english: { title:'Documents Required to Open FD', identity:{label:'🪪 Identity Proof (any one)',items:['Aadhaar Card','PAN Card','Voter ID','Passport','Driving Licence']}, address:{label:'🏠 Address Proof (any one)',items:['Aadhaar Card','Electricity/Water Bill (max 3 months old)','Bank Statement','Ration Card']}, photo:{label:'📷 Photograph',items:['2 Passport Size Photos']}, pan:{label:'⚠️ PAN Card (mandatory)',items:['PAN required for FDs above ₹50,000','Without PAN, Form 60/61 must be submitted']}, note:'💡 Existing account holders may only need PAN + photo — confirm with your branch.' },
+  bhojpuri:{ title:'FD खोले खातिर कागज', identity:{label:'🪪 पहचान पत्र (कवनो एक)',items:['आधार कार्ड','पैन कार्ड','वोटर ID','पासपोर्ट','ड्राइविंग लाइसेंस']}, address:{label:'🏠 पता प्रमाण (कवनो एक)',items:['आधार कार्ड','बिजली/पानी के बिल','बैंक स्टेटमेंट','राशन कार्ड']}, photo:{label:'📷 फोटो',items:['2 पासपोर्ट साइज फोटो']}, pan:{label:'⚠️ पैन कार्ड (जरूरी बा)',items:['₹50,000 से ऊपर के FD खातिर पैन जरूरी','नइखे त फॉर्म 60/61 भरे के पड़ी']}, note:'💡 पहिले से खाता बा त — सिर्फ पैन + फोटो से काम चल सकेला।' },
+  awadhi:  { title:'FD खोलवाए के कागज', identity:{label:'🪪 पहचान पत्र (कोई एक)',items:['आधार कार्ड','पैन कार्ड','वोटर ID','पासपोर्ट','ड्राइविंग लाइसेंस']}, address:{label:'🏠 पते का प्रमाण (कोई एक)',items:['आधार कार्ड','बिजली/पानी का बिल','बैंक स्टेटमेंट','राशन कार्ड']}, photo:{label:'📷 फोटो',items:['2 पासपोर्ट साइज फोटो']}, pan:{label:'⚠️ पैन कार्ड (जरूरी)',items:['₹50,000 से ऊपर के FD खातिर पैन जरूरी','नाय है त फॉर्म 60/61 भरे के परी']}, note:'💡 पहले से खाता बा त — सिर्फ पैन + फोटो काफी हो सकत है।' },
+};
+
 const UI_TEXT = {
-  hindi: {
-    title: 'नजदीकी बैंक शाखा खोजें',
-    selectBank: 'बैंक चुनें',
-    enterCity: 'शहर का नाम लिखें',
-    search: 'खोजें',
-    searching: '🔍 खोज रहा है...',
-    found: 'शाखाएं मिलीं',
-    noResults: 'इस शहर में शाखा नहीं मिली।',
-    visitWebsite: 'आधिकारिक वेबसाइट पर देखें',
-    lowCoverage: 'इस बैंक का डेटा OpenStreetMap पर कम है।',
-    distance: 'दूरी',
-    address: 'पता',
-    close: 'बंद करें',
-    cityPlaceholder: 'जैसे: Gorakhpur, Mumbai, Delhi',
-    note: '📍 डेटा OpenStreetMap से — वास्तविक शाखाएं',
-  },
-  english: {
-    title: 'Find Nearest Bank Branch',
-    selectBank: 'Select Bank',
-    enterCity: 'Enter City Name',
-    search: 'Search',
-    searching: '🔍 Searching...',
-    found: 'branches found',
-    noResults: 'No branches found in this city.',
-    visitWebsite: 'Visit Official Website',
-    lowCoverage: 'Limited OSM data for this bank.',
-    distance: 'Distance',
-    address: 'Address',
-    close: 'Close',
-    cityPlaceholder: 'e.g. Gorakhpur, Mumbai, Delhi',
-    note: '📍 Data from OpenStreetMap — Real branch locations',
-  },
-  bhojpuri: {
-    title: 'नजदीकी बैंक शाखा खोजीं',
-    selectBank: 'बैंक चुनीं',
-    enterCity: 'शहर के नाम लिखीं',
-    search: 'खोजीं',
-    searching: '🔍 खोजत बा...',
-    found: 'शाखा मिलल',
-    noResults: 'एह शहर में शाखा नइखे मिलल।',
-    visitWebsite: 'वेबसाइट पर देखीं',
-    lowCoverage: 'एह बैंक के डेटा कम बा।',
-    distance: 'दूरी',
-    address: 'पता',
-    close: 'बंद करीं',
-    cityPlaceholder: 'जइसे: Gorakhpur, Mumbai',
-    note: '📍 OpenStreetMap से असली डेटा',
-  },
-  awadhi: {
-    title: 'नजदीकी बैंक शाखा खोजें',
-    selectBank: 'बैंक चुनें',
-    enterCity: 'शहर के नाम लिखें',
-    search: 'खोजें',
-    searching: '🔍 खोजत है...',
-    found: 'शाखाएं मिलीं',
-    noResults: 'एह शहर में शाखा नाहीं मिली।',
-    visitWebsite: 'वेबसाइट पर देखें',
-    lowCoverage: 'एह बैंक के डेटा कम है।',
-    distance: 'दूरी',
-    address: 'पता',
-    close: 'बंद करें',
-    cityPlaceholder: 'जैसे: Gorakhpur, Mumbai',
-    note: '📍 OpenStreetMap से असली डेटा',
-  },
+  hindi:   { title:'नजदीकी बैंक शाखा खोजें', selectBank:'बैंक चुनें', enterCity:'शहर का नाम', search:'खोजें', searching:'खोज रहा है...', found:'शाखाएं मिलीं', noResults:'इस शहर में शाखा नहीं मिली। नीचे आधिकारिक लोकेटर देखें।', visitWebsite:'आधिकारिक Branch Locator', nearest:'📍 सबसे नजदीक', km:'किमी दूर', directionsLabel:'Google Maps में देखें', allBranches:'सभी शाखाएं देखें', hideBranches:'छुपाएं', docs:'जरूरी दस्तावेज', hideDocs:'दस्तावेज छुपाएं', close:'बंद करें', cityPlaceholder:'जैसे: Gorakhpur, Lucknow, Delhi', helpline:'हेल्पलाइन', lowCoverage:'इस बैंक की शाखाएं हमारे डेटाबेस में कम हैं। आधिकारिक लोकेटर इस्तेमाल करें:', selected:'✅ चुनी हुई शाखा' },
+  english: { title:'Find Nearest Bank Branch', selectBank:'Select Bank', enterCity:'City Name', search:'Search', searching:'Searching...', found:'branches found', noResults:'No branches found in this city. Use the official branch locator below.', visitWebsite:'Official Branch Locator', nearest:'📍 Nearest', km:'km away', directionsLabel:'Open in Google Maps', allBranches:'Show All Branches', hideBranches:'Hide', docs:'Required Documents', hideDocs:'Hide Documents', close:'Close', cityPlaceholder:'e.g. Gorakhpur, Mumbai, Delhi', helpline:'Helpline', lowCoverage:'Limited branch data for this bank. Please use the official locator:', selected:'✅ Selected' },
+  bhojpuri:{ title:'नजदीकी बैंक शाखा खोजीं', selectBank:'बैंक चुनीं', enterCity:'शहर के नाम', search:'खोजीं', searching:'खोजत बा...', found:'शाखा मिलल', noResults:'एह शहर में शाखा नइखे।', visitWebsite:'ऑफिशियल Branch Locator', nearest:'📍 सबसे नजदीक', km:'किमी दूर', directionsLabel:'Google Maps में देखीं', allBranches:'सभ शाखा देखीं', hideBranches:'छुपाईं', docs:'जरूरी कागज', hideDocs:'कागज छुपाईं', close:'बंद करीं', cityPlaceholder:'जइसे: Gorakhpur, Lucknow', helpline:'हेल्पलाइन', lowCoverage:'एह बैंक के शाखा डेटा कम बा।', selected:'✅ चुनल शाखा' },
+  awadhi:  { title:'नजदीकी बैंक शाखा खोजें', selectBank:'बैंक चुनें', enterCity:'शहर के नाम', search:'खोजें', searching:'खोजत है...', found:'शाखाएं मिलीं', noResults:'एह शहर में शाखा नाहीं मिली।', visitWebsite:'ऑफिशियल Branch Locator', nearest:'📍 सबसे नजदीक', km:'किमी दूर', directionsLabel:'Google Maps में देखें', allBranches:'सभ शाखा देखें', hideBranches:'छुपाएं', docs:'जरूरी दस्तावेज', hideDocs:'दस्तावेज छुपाएं', close:'बंद करें', cityPlaceholder:'जैसे: Gorakhpur, Lucknow', helpline:'हेल्पलाइन', lowCoverage:'एह बैंक के शाखा डेटा कम है।', selected:'✅ चुनी हुई शाखा' },
 };
 
-// Geocode city name to coordinates using Nominatim (free, no key)
-const geocodeCity = async (city) => {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city + ', India')}&format=json&limit=1`;
-  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-  const data = await res.json();
-  if (data.length === 0) return null;
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), displayName: data[0].display_name };
-};
-
-// Query Overpass for bank branches near coordinates
-const fetchBranches = async (osmName, lat, lon, city) => {
-  // Use Nominatim search — much more reliable than Overpass
-  const searchTerms = [osmName, osmName.split(' ')[0]];
-  const allResults = [];
-
-  for (const term of searchTerms) {
-    const url = `https://nominatim.openstreetmap.org/search?` +
-      `q=${encodeURIComponent(term + ' bank ' + city + ' India')}` +
-      `&format=json&limit=10&addressdetails=1` +
-      `&bounded=1&viewbox=${lon-0.5},${lat+0.5},${lon+0.5},${lat-0.5}`;
-
-    const res = await fetch(url, {
-      headers: { 'Accept-Language': 'en', 'User-Agent': 'FDSaathi/1.0' }
-    });
-    const data = await res.json();
-    allResults.push(...data);
-  }
-
-  // Deduplicate by place_id
-  const seen = new Set();
-  const unique = allResults.filter((r) => {
-    if (seen.has(r.place_id)) return false;
-    seen.add(r.place_id);
-    return true;
-  });
-
-  // Convert to our format
-  return unique.map((r) => ({
-    id: r.place_id,
-    lat: parseFloat(r.lat),
-    lon: parseFloat(r.lon),
-    tags: {
-      name: r.display_name.split(',')[0],
-      'addr:full': r.display_name.split(',').slice(1, 3).join(',').trim(),
-      phone: r.extratags?.phone,
-    },
-    distance: getDistance(lat, lon, parseFloat(r.lat), parseFloat(r.lon)),
-  }));
-};
-
-// Calculate distance between two coordinates in km
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
 const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+  const R = 6371, dLat = ((lat2-lat1)*Math.PI)/180, dLon = ((lon2-lon1)*Math.PI)/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos((lat1*Math.PI)/180)*Math.cos((lat2*Math.PI)/180)*Math.sin(dLon/2)**2;
+  return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
 };
 
-// Simple map using Leaflet (loaded via CDN)
-const BranchMap = ({ branches, centerLat, centerLon, bankColor }) => {
-  const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
+const geocodeCity = async (city) => {
+  const res  = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city+', India')}&format=json&limit=1`, { headers:{'Accept-Language':'en','User-Agent':'FDSaathi/1.0'} });
+  const data = await res.json();
+  if (!data.length) return null;
+  return { lat:parseFloat(data[0].lat), lon:parseFloat(data[0].lon) };
+};
 
-  useEffect(() => {
-    if (!mapRef.current || branches.length === 0) return;
+const fetchBranchesOverpass = async (osmName, lat, lon) => {
+  const q = `[out:json][timeout:20];(node["name"~"${osmName}",i]["amenity"="bank"](around:20000,${lat},${lon});way["name"~"${osmName}",i]["amenity"="bank"](around:20000,${lat},${lon}););out body center;`;
+  const res = await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:q});
+  return (await res.json()).elements || [];
+};
 
-    // Load Leaflet CSS
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
+const fetchBranchesNominatim = async (osmName, city, lat, lon) => {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(osmName+' '+city+' India')}&format=json&limit=12&addressdetails=1&extratags=1&bounded=1&viewbox=${lon-0.6},${lat+0.6},${lon+0.6},${lat-0.6}`;
+  const res  = await fetch(url,{headers:{'Accept-Language':'en','User-Agent':'FDSaathi/1.0'}});
+  const data = await res.json();
+  return data.map((r) => ({ id:r.place_id, lat:parseFloat(r.lat), lon:parseFloat(r.lon), name:r.display_name.split(',')[0], address:r.display_name.split(',').slice(1,4).join(', ').trim(), phone:r.extratags?.phone||r.extratags?.['contact:phone']||null }));
+};
 
-    // Load Leaflet JS
-    const loadLeaflet = () => {
-      if (window.L) {
-        initMap();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = initMap;
-      document.head.appendChild(script);
-    };
+const normalizeBranches = (elements, cLat, cLon) =>
+  elements.map((el) => {
+    const lat = el.lat||el.center?.lat, lon = el.lon||el.center?.lon;
+    if (!lat||!lon) return null;
+    const tags = el.tags||{};
+    const addr = [tags['addr:housenumber'],tags['addr:street'],tags['addr:suburb'],tags['addr:city']].filter(Boolean);
+    return { id:el.id, lat, lon, name:tags.name||tags['name:en']||'', address:addr.length?addr.join(', '):null, phone:tags.phone||tags['contact:phone']||tags['contact:mobile']||null, opening_hours:tags.opening_hours||null, distance:parseFloat(getDistance(cLat,cLon,lat,lon)) };
+  }).filter(Boolean).sort((a,b)=>a.distance-b.distance);
 
-    const initMap = () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-      }
+// ── DOCUMENTS PANEL ───────────────────────────────────────────────────────────
+const DocumentsPanel = ({ language }) => {
+  const docs = FD_DOCUMENTS[language] || FD_DOCUMENTS.hindi;
+  return (
+    <div style={{ background:C.surface, border:`1px solid ${C.borderHi}`, borderRadius:'14px', padding:'16px', marginTop:'12px' }}>
+      <div style={{ fontSize:'13px', fontWeight:'700', color:C.green, marginBottom:'12px' }}>📋 {docs.title}</div>
+      {[docs.identity, docs.address, docs.photo, docs.pan].map((section) => (
+        <div key={section.label} style={{ marginBottom:'10px' }}>
+          <div style={{ fontSize:'12px', fontWeight:'600', color:C.text, marginBottom:'5px' }}>{section.label}</div>
+          <div style={{ paddingLeft:'8px' }}>
+            {section.items.map((item) => (
+              <div key={item} style={{ fontSize:'12px', color:C.textDim, padding:'2px 0', display:'flex', alignItems:'flex-start', gap:'6px' }}>
+                <span style={{ color:C.green, marginTop:'1px', flexShrink:0 }}>•</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div style={{ marginTop:'8px', padding:'9px 11px', background:C.amberBg, border:`1px solid ${C.amberBorder}`, borderRadius:'8px', fontSize:'11px', color:C.amber, lineHeight:1.5 }}>
+        {docs.note}
+      </div>
+    </div>
+  );
+};
 
-      const map = window.L.map(mapRef.current).setView([centerLat, centerLon], 13);
-      mapInstanceRef.current = map;
-
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18,
-      }).addTo(map);
-
-      // Add branch markers
-      branches.forEach((branch) => {
-        const lat = branch.lat || branch.center?.lat;
-        const lon = branch.lon || branch.center?.lon;
-        if (!lat || !lon) return;
-
-        const icon = window.L.divIcon({
-          html: `<div style="background:${bankColor};color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);">🏦</div>`,
-          className: '',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-        });
-
-        const address = branch.tags?.['addr:full'] ||
-          [branch.tags?.['addr:street'], branch.tags?.['addr:city']].filter(Boolean).join(', ') ||
-          'Address not available';
-
-        window.L.marker([lat, lon], { icon })
-          .bindPopup(`<b>${branch.tags?.name || 'Bank Branch'}</b><br>${address}`)
-          .addTo(map);
-      });
-
-      // Center marker
-      window.L.circleMarker([centerLat, centerLon], {
-        radius: 8, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.8,
-      }).bindPopup('Your searched location').addTo(map);
-    };
-
-    loadLeaflet();
-
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, [branches, centerLat, centerLon, bankColor]);
+// ── BRANCH CARD ───────────────────────────────────────────────────────────────
+const BranchCard = ({ branch, index, isSelected, onSelect, bankColor, t }) => {
+  const isNearest = index === 0;
+  const mapsUrl   = `https://www.google.com/maps/search/?api=1&query=${branch.lat},${branch.lon}`;
 
   return (
-    <div ref={mapRef} style={{
-      width: '100%', height: '280px', borderRadius: '12px',
-      overflow: 'hidden', border: '1px solid #e2e8f0',
-      marginBottom: '14px',
-    }} />
+    <div onClick={() => onSelect(branch)} style={{
+      padding:'14px', marginBottom:'8px', cursor:'pointer', borderRadius:'12px',
+      background: isSelected ? `${bankColor}15` : isNearest ? C.greenBg : C.surface,
+      border: isSelected ? `1.5px solid ${bankColor}` : isNearest ? `1.5px solid ${C.borderHi}` : `1px solid ${C.border}`,
+      transition:'all 0.15s',
+    }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'10px' }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'6px', flexWrap:'wrap', marginBottom:'4px' }}>
+            {isNearest && !isSelected && (
+              <span style={{ fontSize:'10px', background:C.greenBg, color:C.green, border:`1px solid ${C.borderHi}`, padding:'2px 7px', borderRadius:'5px', flexShrink:0 }}>{t.nearest}</span>
+            )}
+            {isSelected && (
+              <span style={{ fontSize:'10px', background:`${bankColor}20`, color:bankColor, border:`1px solid ${bankColor}50`, padding:'2px 7px', borderRadius:'5px', flexShrink:0 }}>{t.selected}</span>
+            )}
+          </div>
+          <div style={{ fontSize:'13px', fontWeight:'600', color:C.text, marginBottom:'3px' }}>{branch.name || 'Branch'}</div>
+          {branch.address
+            ? <div style={{ fontSize:'11px', color:C.textDim, lineHeight:1.4 }}>📍 {branch.address}</div>
+            : <div style={{ fontSize:'11px', color:C.textMuted }}>📍 Address not listed in OpenStreetMap</div>
+          }
+          {branch.phone && (
+            <a href={`tel:${branch.phone.replace(/\s/g,'')}`} onClick={(e)=>e.stopPropagation()} style={{ fontSize:'11px', color:C.green, textDecoration:'none', display:'block', marginTop:'3px' }}>
+              📞 {branch.phone}
+            </a>
+          )}
+          {branch.opening_hours && (
+            <div style={{ fontSize:'10px', color:C.textDim, marginTop:'2px' }}>🕐 {branch.opening_hours}</div>
+          )}
+        </div>
+        <div style={{ textAlign:'right', flexShrink:0 }}>
+          <div style={{ fontSize:'18px', fontWeight:'800', color:bankColor, fontVariantNumeric:'tabular-nums' }}>{branch.distance}</div>
+          <div style={{ fontSize:'10px', color:C.textMuted, marginBottom:'6px' }}>{t.km}</div>
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e)=>e.stopPropagation()} style={{ fontSize:'10px', color:'white', background:bankColor, padding:'4px 8px', borderRadius:'6px', textDecoration:'none', display:'inline-block', whiteSpace:'nowrap' }}>
+            🗺 Maps
+          </a>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -238,227 +168,207 @@ const BranchMap = ({ branches, centerLat, centerLon, bankColor }) => {
 const BranchFinder = ({ onClose, language = 'hindi' }) => {
   const t = UI_TEXT[language] || UI_TEXT.hindi;
   const [selectedBankId, setSelectedBankId] = useState('sbi');
-  const [city, setCity] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [branches, setBranches] = useState([]);
-  const [center, setCenter] = useState(null);
-  const [error, setError] = useState('');
-  const [searched, setSearched] = useState(false);
+  const [city, setCity]               = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [branches, setBranches]       = useState([]);
+  const [searched, setSearched]       = useState(false);
+  const [error, setError]             = useState('');
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [showAllBranches, setShowAllBranches] = useState(false);
+  const [showDocs, setShowDocs]       = useState(false);
 
   const selectedBank = SEARCHABLE_BANKS.find((b) => b.id === selectedBankId);
 
+  const handleBankChange = (id) => {
+    setSelectedBankId(id); setBranches([]); setSearched(false);
+    setSelectedBranch(null); setError(''); setShowAllBranches(false);
+  };
+
   const handleSearch = async () => {
     if (!city.trim()) return;
-    setLoading(true);
-    setError('');
-    setBranches([]);
-    setSearched(false);
-
+    setLoading(true); setError(''); setBranches([]); setSearched(false); setSelectedBranch(null); setShowAllBranches(false);
     try {
-      // Step 1: Geocode the city
       const location = await geocodeCity(city);
       if (!location) {
-        setError('शहर नहीं मिला। दूसरा नाम try करें।');
-        setLoading(false);
-        return;
+        setError(language==='english' ? 'City not found. Try a different spelling.' : 'शहर नहीं मिला। दूसरा नाम try करें।');
+        setLoading(false); return;
       }
-      setCenter(location);
+      if (selectedBank.coverage === 'low') { setBranches([]); setSearched(true); setLoading(false); return; }
 
-      // Step 2: If low coverage SFB, skip Overpass
-      if (selectedBank.coverage === 'low') {
-        setBranches([]);
-        setSearched(true);
-        setLoading(false);
-        return;
+      let results = [];
+      try {
+        const raw = await fetchBranchesOverpass(selectedBank.osmName, location.lat, location.lon);
+        results = normalizeBranches(raw, location.lat, location.lon);
+      } catch { /* fallthrough to Nominatim */ }
+
+      if (results.length === 0) {
+        const nom = await fetchBranchesNominatim(selectedBank.osmName, city, location.lat, location.lon);
+        results = nom.map((r)=>({...r, distance:parseFloat(getDistance(location.lat,location.lon,r.lat,r.lon))})).sort((a,b)=>a.distance-b.distance);
       }
 
-      // Step 3: Fetch branches from Overpass
-      const results = await fetchBranches(selectedBank.osmName, location.lat, location.lon, city);
-
-      // Sort by distance
-      const sorted = results
-        .filter((b) => b.lat || b.center?.lat)
-        .map((b) => ({
-          ...b,
-          distance: getDistance(location.lat, location.lon, b.lat || b.center?.lat, b.lon || b.center?.lon),
-        }))
-        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
-
-      setBranches(sorted);
-      setSearched(true);
-    } catch (e) {
-      setError('Network error. Please check your internet connection.');
+      setBranches(results); setSelectedBranch(results[0]||null); setSearched(true);
+    } catch {
+      setError(language==='english' ? 'Network error. Please check your connection.' : 'नेटवर्क की दिक्कत। कनेक्शन जांचें।');
     } finally {
       setLoading(false);
     }
   };
 
+  const displayedBranches = showAllBranches ? branches.slice(0,10) : branches.slice(0,1);
+
+  const inputStyle = {
+    flex:1, padding:'11px 14px',
+    background:C.surface, border:`1px solid ${C.border}`,
+    borderRadius:'10px', fontSize:'14px',
+    fontFamily:"'DM Sans','Noto Sans Devanagari',sans-serif",
+    color:C.text, outline:'none',
+  };
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: '12px',
-    }}>
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:'12px' }}>
       <div style={{
-        background: 'white', borderRadius: '20px',
-        width: '100%', maxWidth: '540px',
-        maxHeight: '92vh', overflowY: 'auto', padding: '24px',
+        background:'#0a120a', borderRadius:'20px',
+        width:'100%', maxWidth:'540px', maxHeight:'92vh', overflowY:'auto',
+        padding:'24px', border:`1px solid ${C.borderHi}`,
+        boxShadow:'0 0 60px rgba(74,222,128,0.08)',
+        fontFamily:"'DM Sans','Noto Sans Devanagari',sans-serif",
+        color:C.text,
       }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ fontSize: '17px', fontWeight: '700', color: '#1a6b3c' }}>
-            📍 {t.title}
-          </div>
-          <button onClick={onClose} style={{
-            width: '32px', height: '32px', background: '#f0f0f0',
-            border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px',
-          }}>✕</button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px' }}>
+          <div style={{ fontSize:'17px', fontWeight:'700', color:C.green }}>🏦 {t.title}</div>
+          <button onClick={onClose} style={{ width:'32px', height:'32px', background:C.surface, border:`1px solid ${C.border}`, borderRadius:'50%', cursor:'pointer', fontSize:'14px', color:C.textDim }}>✕</button>
         </div>
 
-        {/* Bank selector */}
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: '6px' }}>{t.selectBank}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {SEARCHABLE_BANKS.map((bank) => (
-              <button
-                key={bank.id}
-                onClick={() => setSelectedBankId(bank.id)}
-                style={{
-                  padding: '6px 10px', fontSize: '12px',
-                  border: selectedBankId === bank.id ? `2px solid ${bank.color}` : '1px solid #e2e8f0',
-                  borderRadius: '8px', cursor: 'pointer',
-                  background: selectedBankId === bank.id ? `${bank.color}15` : 'white',
-                  color: selectedBankId === bank.id ? bank.color : '#555',
-                  fontWeight: selectedBankId === bank.id ? '700' : '400',
-                }}
-              >
-                {language === 'english' ? bank.name : bank.nameHindi}
-              </button>
-            ))}
+        {/* Bank selector pills */}
+        <div style={{ marginBottom:'16px' }}>
+          <div style={{ fontSize:'11px', color:C.textDim, marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.8px' }}>{t.selectBank}</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
+            {SEARCHABLE_BANKS.map((bank) => {
+              const active = selectedBankId === bank.id;
+              return (
+                <button key={bank.id} onClick={() => handleBankChange(bank.id)} style={{
+                  padding:'6px 11px', fontSize:'12px', borderRadius:'8px', cursor:'pointer',
+                  border: active ? `1.5px solid ${bank.color}` : `1px solid ${C.border}`,
+                  background: active ? `${bank.color}18` : C.surface,
+                  color: active ? bank.color : C.textDim,
+                  fontWeight: active ? '700' : '400',
+                  fontFamily:'inherit', transition:'all 0.15s',
+                }}>
+                  {language === 'english' ? bank.name : bank.nameHindi}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Coverage warning for SFBs */}
-        {selectedBank.coverage === 'low' && (
-          <div style={{
-            padding: '10px 12px', background: '#fffbeb',
-            border: '1px solid #f59e0b', borderRadius: '10px',
-            fontSize: '12px', color: '#92400e', marginBottom: '12px',
-          }}>
-            ⚠️ {t.lowCoverage}
-            {selectedBank.website && (
-              <a href={selectedBank.website} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', color: '#1a6b3c', fontWeight: '600', marginTop: '4px' }}>
-                🌐 {t.visitWebsite} →
-              </a>
-            )}
+        {/* City search row */}
+        <div style={{ display:'flex', gap:'8px', marginBottom:'14px' }}>
+          <input
+            value={city} onChange={(e)=>setCity(e.target.value)}
+            onKeyDown={(e)=>e.key==='Enter'&&handleSearch()}
+            placeholder={t.cityPlaceholder}
+            style={inputStyle}
+          />
+          <button onClick={handleSearch} disabled={loading||!city.trim()} style={{
+            padding:'11px 20px', borderRadius:'10px', border:'none',
+            background: city.trim()&&!loading ? `linear-gradient(135deg,${selectedBank.color}cc,${selectedBank.color})` : 'rgba(255,255,255,0.06)',
+            color: city.trim()&&!loading ? 'white' : C.textMuted,
+            cursor: city.trim()&&!loading ? 'pointer' : 'default',
+            fontSize:'14px', fontWeight:'600', whiteSpace:'nowrap', minWidth:'80px', fontFamily:'inherit',
+          }}>{loading ? '⏳' : t.search}</button>
+        </div>
+
+        {/* Searching */}
+        {loading && (
+          <div style={{ textAlign:'center', padding:'24px', color:C.greenDim, fontSize:'14px' }}>
+            <div style={{ fontSize:'28px', marginBottom:'8px' }}>🔍</div>
+            {t.searching}
           </div>
         )}
 
-        {/* City input + search */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder={t.cityPlaceholder}
-            style={{
-              flex: 1, padding: '10px 14px',
-              border: '2px solid #e2e8f0', borderRadius: '10px',
-              fontSize: '14px', fontFamily: 'inherit',
-            }}
-          />
-          <button
-            onClick={handleSearch}
-            disabled={loading || !city.trim()}
-            style={{
-              padding: '10px 18px', borderRadius: '10px', border: 'none',
-              background: city.trim() ? 'linear-gradient(135deg, #1a6b3c, #2d9e5f)' : '#ccc',
-              color: 'white', cursor: city.trim() ? 'pointer' : 'default',
-              fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap',
-            }}
-          >
-            {loading ? t.searching : t.search}
-          </button>
-        </div>
-
         {/* Error */}
         {error && (
-          <div style={{ padding: '10px', background: '#fee2e2', borderRadius: '10px', fontSize: '13px', color: '#dc2626', marginBottom: '12px' }}>
+          <div style={{ padding:'10px 12px', background:C.redBg, border:'1px solid rgba(248,113,113,0.2)', borderRadius:'10px', fontSize:'13px', color:C.red, marginBottom:'12px' }}>
             ❌ {error}
           </div>
         )}
 
-        {/* Map */}
-        {center && branches.length > 0 && (
-          <BranchMap
-            branches={branches}
-            centerLat={center.lat}
-            centerLon={center.lon}
-            bankColor={selectedBank.color}
-          />
+        {/* Low coverage notice */}
+        {searched && selectedBank.coverage === 'low' && (
+          <div style={{ padding:'14px', background:C.amberBg, border:`1px solid ${C.amberBorder}`, borderRadius:'12px', marginBottom:'12px' }}>
+            <div style={{ fontSize:'13px', color:C.amber, marginBottom:'10px' }}>⚠️ {t.lowCoverage}</div>
+            <a href={selectedBank.website_locator} target="_blank" rel="noopener noreferrer" style={{ display:'inline-block', padding:'8px 14px', background:`${selectedBank.color}25`, color:selectedBank.color, border:`1px solid ${selectedBank.color}50`, borderRadius:'8px', textDecoration:'none', fontSize:'13px', fontWeight:'600' }}>
+              🌐 {t.visitWebsite} →
+            </a>
+          </div>
         )}
 
-        {/* Results */}
+        {/* Results header */}
         {searched && branches.length > 0 && (
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a6b3c', marginBottom: '10px' }}>
-              🏦 {branches.length} {t.found}
+            <div style={{ fontSize:'13px', fontWeight:'600', color:C.green, marginBottom:'10px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span>🏦 {branches.length} {t.found}</span>
+              {branches.length > 1 && (
+                <button onClick={()=>setShowAllBranches((v)=>!v)} style={{ fontSize:'12px', color:selectedBank.color, background:`${selectedBank.color}15`, border:`1px solid ${selectedBank.color}40`, borderRadius:'7px', padding:'4px 10px', cursor:'pointer', fontWeight:'500', fontFamily:'inherit' }}>
+                  {showAllBranches ? t.hideBranches : `${t.allBranches} (${branches.length})`}
+                </button>
+              )}
             </div>
-            {branches.slice(0, 8).map((branch, i) => {
-              const lat = branch.lat || branch.center?.lat;
-              const lon = branch.lon || branch.center?.lon;
-              const address = branch.tags?.['addr:full'] ||
-                [branch.tags?.['addr:street'], branch.tags?.['addr:housenumber'], branch.tags?.['addr:city']]
-                  .filter(Boolean).join(', ') || 'Address on map';
-              const phone = branch.tags?.phone || branch.tags?.['contact:phone'];
-
-              return (
-                <div key={branch.id} style={{
-                  padding: '12px 14px', marginBottom: '8px',
-                  background: i === 0 ? '#f0fdf4' : '#fafafa',
-                  borderRadius: '10px',
-                  border: i === 0 ? '1.5px solid #1a6b3c' : '1px solid #f0f0f0',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#2d3748', marginBottom: '2px' }}>
-                        {i === 0 ? '📍 ' : ''}{branch.tags?.name || selectedBank.name}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>{address}</div>
-                      {phone && <div style={{ fontSize: '11px', color: '#1a6b3c' }}>📞 {phone}</div>}
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '10px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#1a6b3c' }}>{branch.distance} km</div>
-                      
-                        <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=17`}
-                        target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: '10px', color: '#888', textDecoration: 'none' }}
-                      >
-                        🗺 Map
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {displayedBranches.map((branch, i) => (
+              <BranchCard key={branch.id} branch={branch} index={branches.indexOf(branch)} isSelected={selectedBranch?.id===branch.id} onSelect={setSelectedBranch} bankColor={selectedBank.color} t={t} />
+            ))}
           </div>
         )}
 
         {/* No results */}
-        {searched && branches.length === 0 && selectedBank.coverage !== 'low' && (
-          <div style={{ textAlign: 'center', padding: '24px', color: '#888' }}>
-            <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔍</div>
-            <div style={{ fontSize: '14px', marginBottom: '8px' }}>{t.noResults}</div>
-            <div style={{ fontSize: '12px' }}>Try searching a larger nearby city.</div>
+        {searched && branches.length===0 && selectedBank.coverage!=='low' && (
+          <div style={{ textAlign:'center', padding:'24px', color:C.textDim }}>
+            <div style={{ fontSize:'32px', marginBottom:'8px' }}>🔍</div>
+            <div style={{ fontSize:'14px', marginBottom:'12px' }}>{t.noResults}</div>
+            <a href={selectedBank.website_locator||selectedBank.website} target="_blank" rel="noopener noreferrer" style={{ display:'inline-block', padding:'8px 16px', background:C.greenBg, color:C.green, border:`1px solid ${C.borderHi}`, borderRadius:'8px', textDecoration:'none', fontSize:'13px', fontWeight:'600' }}>
+              🌐 {t.visitWebsite} →
+            </a>
           </div>
         )}
 
-        {/* OSM attribution note */}
-        <div style={{ fontSize: '11px', color: '#aaa', textAlign: 'center', marginTop: '16px' }}>
-          {t.note}
+        {/* Bank contact card */}
+        <div style={{ marginTop:'16px', padding:'14px', background:`${selectedBank.color}0d`, border:`1px solid ${selectedBank.color}30`, borderRadius:'12px' }}>
+          <div style={{ fontSize:'13px', fontWeight:'700', color:selectedBank.color, marginBottom:'8px' }}>
+            {language==='english' ? selectedBank.name : selectedBank.nameHindi} — {t.helpline}
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'12px', alignItems:'center' }}>
+            <a href={`tel:${selectedBank.phone}`} style={{ display:'flex', alignItems:'center', gap:'5px', fontSize:'13px', color:C.green, textDecoration:'none', fontWeight:'600' }}>
+              📞 {selectedBank.phone}
+            </a>
+            <a href={`mailto:${selectedBank.email}`} style={{ display:'flex', alignItems:'center', gap:'5px', fontSize:'12px', color:C.textDim, textDecoration:'none' }}>
+              ✉️ {selectedBank.email}
+            </a>
+          </div>
+          <a href={selectedBank.website} target="_blank" rel="noopener noreferrer" style={{ fontSize:'11px', color:C.textMuted, display:'block', marginTop:'5px' }}>
+            🌐 {selectedBank.website}
+          </a>
         </div>
+
+        {/* Documents toggle */}
+        <button onClick={()=>setShowDocs((v)=>!v)} style={{
+          marginTop:'12px', width:'100%', padding:'12px',
+          background: showDocs ? C.gradGreen : C.surface,
+          color: showDocs ? 'white' : C.green,
+          border: `1px solid ${showDocs ? 'rgba(74,222,128,0.4)' : C.borderHi}`,
+          borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer',
+          fontFamily:'inherit', transition:'all 0.2s',
+        }}>
+          📋 {showDocs ? t.hideDocs : t.docs}
+        </button>
+
+        {showDocs && <DocumentsPanel language={language} />}
+
+        {/* Close */}
+        <button onClick={onClose} style={{ marginTop:'10px', width:'100%', padding:'12px', background:C.surface, color:C.textDim, border:`1px solid ${C.border}`, borderRadius:'12px', fontSize:'14px', fontWeight:'500', cursor:'pointer', fontFamily:'inherit' }}>
+          {t.close}
+        </button>
       </div>
     </div>
   );

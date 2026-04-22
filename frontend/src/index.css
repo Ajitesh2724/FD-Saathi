@@ -4,14 +4,15 @@
   padding: 0;
 }
 
-html, body, #root {
+html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: #060c06;
 }
 
-body {
-  font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;
-  background: #f0fdf4;
-  -webkit-font-smoothing: antialiased;
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
