@@ -20,7 +20,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",          # for local development
-        "https://fd-saathi.vercel.app/",   # your Vercel URL (update after deploy)
+        "https://fd-saathi.vercel.app",   # your Vercel URL (update after deploy)
         "https://*.vercel.app",           # covers all Vercel preview URLs
     ],
     allow_credentials=True,
