@@ -1,7 +1,7 @@
 # 🏦 FD Saathi — एफडी साथी
 ### Your Vernacular Fixed Deposit Advisor for Bharat
 
-Deployed Link: Live deployment link will be added here once deployed.
+Deployed Link: https://fd-saathi.vercel.app/
 
 ---
 

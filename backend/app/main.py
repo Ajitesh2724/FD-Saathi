@@ -18,7 +18,11 @@ app = FastAPI(
 # Allow all origins in dev. For production: restrict to your frontend URL.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # Replace with ["https://your-frontend.vercel.app"] in prod
+    allow_origins=[
+        "http://localhost:5173",          # for local development
+        "https://fd-saathi.vercel.app/",   # your Vercel URL (update after deploy)
+        "https://*.vercel.app",           # covers all Vercel preview URLs
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
