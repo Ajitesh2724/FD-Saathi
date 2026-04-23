@@ -47,19 +47,14 @@ from app.utils.calculator import calculate_maturity, format_inr, compare_rates_f
 logger = logging.getLogger(__name__)
 
 # ─── Model config ─────────────────────────────────────────────────────────────
-# Free tier daily limits (as of 2025):
-#   gemini-1.5-flash-8b : 4,000 req/day, 15 RPM  ← best for free tier
-#   gemini-1.5-flash    : 1,500 req/day, 15 RPM
-#   gemini-2.5-flash    :   500 req/day, 10 RPM  ← save as last resort
-PRIMARY_MODEL   = "gemini-1.5-flash-8b"   # 4000/day — maximises free quota
-FALLBACK_MODEL  = "gemini-1.5-flash"      # 1500/day
-LAST_MODEL      = "gemini-2.5-flash"      # 500/day  — last resort
+# gemini-1.5-flash: 1,500 req/day free  (vs 20/day for gemini-2.5-flash)
+# gemini-1.5-flash-8b: 4,000 req/day free (lighter, still very capable)
+PRIMARY_MODEL   = "gemini-1.5-flash"
+FALLBACK_MODEL  = "gemini-2.5-flash"
 
 # Retry settings
-MAX_RETRIES  = 2    # 2 attempts per model (not 3) — saves quota
-# CRITICAL: keep sleep < 25s so it stays under the frontend's 30s axios timeout
-MAX_SLEEP    = 22   # hard cap on sleep duration in seconds
-BASE_BACKOFF = 5    # start with 5s, then 10s
+MAX_RETRIES     = 2
+BASE_BACKOFF    = 2   # seconds — doubles on each retry
 
 # Configure Gemini — uses key loaded above
 genai.configure(api_key=_GEMINI_API_KEY)
@@ -68,32 +63,34 @@ genai.configure(api_key=_GEMINI_API_KEY)
 # ─── System Prompt ────────────────────────────────────────────────────────────
 
 def _build_system_prompt() -> str:
-    """Build compact system prompt. Called ONCE at module load — result cached."""
+    """Build the system prompt. Called once at module load — result is cached."""
     bank_summary = []
     for bank in FD_BANKS:
-        rates_str = ", ".join([f"{r['tenure_label']}:{r['rate']}%" for r in bank["rates"]])
+        rates_str = ", ".join([f"{r['tenure_label']}: {r['rate']}%" for r in bank["rates"]])
         bank_summary.append(
             f"- {bank['name']} ({bank['name_hindi']}): {rates_str} | "
-            f"Min:₹{bank['min_amount']} | DICGC:{'✓' if bank['dicgc_insured'] else '✗'}"
+            f"Min: ₹{bank['min_amount']} | DICGC: {'✓' if bank['dicgc_insured'] else '✗'}"
         )
-    jargon_str = [f"  '{t}':{e['hindi']}" for t, e in JARGON_DICT.items()]
 
-    return (
-        "You are FD Saathi (एफडी साथी), a warm FD advisor for India. "
-        "Detect language and reply in SAME language: Hindi→Hindi, English→English, "
-        "Bhojpuri→Bhojpuri (रउआ/बा/हई), Awadhi→Awadhi. "
-        "Keep replies SHORT (3-4 sentences). End with one follow-up question. "
-        "Only give FD advice. Never invent rates — use only data below.\n\n"
-        "BANKS (all DICGC insured ₹5L, use only these rates):\n"
-        + "\n".join(bank_summary)
-        + "\n\nJARGON:\n"
-        + "\n".join(jargon_str)
-    )
+    jargon_str = [
+        f"  '{term}': {expl['hindi']}"
+        for term, expl in JARGON_DICT.items()
+    ]
 
-# ── Cache once at startup — saves ~900 tokens being rebuilt on every request ──
+    return f"""You are FD Saathi (एफडी साथी), a warm FD advisor for India. Speak user's language exactly: Hindi→Hindi, English→English, Bhojpuri→Bhojpuri (रउआ/बा/हई), Awadhi→Awadhi. Never use jargon without explaining. Keep replies SHORT (3-4 sentences max). End with one follow-up question.
+
+BANKS (DICGC insured, use only these rates):
+{chr(10).join(bank_summary)}
+
+JARGON:
+{chr(10).join(jargon_str)}
+
+RULES: Only FD advice. DICGC covers ₹5L per bank. Never dismiss small amounts."""
+
+# ── Cache the prompt once at module load (saves ~900 tokens of rebuild per request) ──
 _SYSTEM_PROMPT = _build_system_prompt()
-print(f"[gemini_service] ✅ System prompt cached "
-      f"({len(_SYSTEM_PROMPT)} chars ≈ {len(_SYSTEM_PROMPT)//4} tokens)")
+print(f"[gemini_service] System prompt cached ({len(_SYSTEM_PROMPT)} chars, "
+      f"~{len(_SYSTEM_PROMPT)//4} tokens)")
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -158,14 +155,7 @@ def chat_with_fd_saathi(
     history: list[dict],
     booking_context: dict | None = None,
 ) -> dict:
-    """
-    Send a message to FD Saathi and get a response.
-    - Uses gemini-1.5-flash (1500 free req/day) instead of gemini-2.5-flash (20/day).
-    - Retries up to MAX_RETRIES times on rate-limit errors, respecting the
-      retry_delay the API returns.
-    - Falls back to gemini-2.5-flash if primary model is still exhausted.
-    """
-    # Use module-level cached prompt — never rebuild per request (saves ~900 tokens)
+    # Use the module-level cached prompt — never rebuild per request
     system_prompt  = _SYSTEM_PROMPT
     gemini_history = format_history_for_gemini(history)
 
@@ -185,8 +175,8 @@ def chat_with_fd_saathi(
             f"[END SYSTEM CONTEXT]\n\nUser message: {user_message}"
     )
 
-    # Try all three models with retries
-    models_to_try = [PRIMARY_MODEL, FALLBACK_MODEL, LAST_MODEL]
+    # Try primary model with retries, then fallback model
+    models_to_try = [PRIMARY_MODEL, FALLBACK_MODEL]
 
     for model_name in models_to_try:
         last_error = None
@@ -203,24 +193,22 @@ def chat_with_fd_saathi(
 
                 if _is_rate_limit(e):
                     if attempt < MAX_RETRIES:
-                        # Cap sleep at MAX_SLEEP so we stay under the 30s frontend timeout
-                        raw_delay = _extract_retry_delay(error_str)
-                        delay = min(raw_delay, MAX_SLEEP)
+                        delay = _extract_retry_delay(error_str)
                         logger.warning(
-                            "Rate limit on model=%s attempt=%d. Sleeping %.1fs (capped at %ds)...",
-                            model_name, attempt, delay, MAX_SLEEP,
+                            "Rate limit on model=%s attempt=%d. Retrying in %.1fs...",
+                            model_name, attempt, delay,
                         )
-                        print(f"[gemini_service] ⏳ Rate limited on {model_name}, sleeping {delay:.0f}s...")
                         time.sleep(delay)
                         continue
                     else:
+                        # Exhausted retries for this model — try next
                         logger.warning(
-                            "Rate limit exhausted for model=%s after %d attempts. Switching...",
-                            model_name, MAX_RETRIES,
+                            "Rate limit exhausted for model=%s after %d attempts. "
+                            "Switching model...", model_name, MAX_RETRIES,
                         )
                         break
                 else:
-                    # Non-rate-limit error — surface immediately
+                    # Non-rate-limit error — print so it's visible in uvicorn terminal
                     logger.error("Gemini error (model=%s): %s", model_name, error_str)
                     print(f"\n[gemini_service] ❌ ERROR model={model_name}: {type(e).__name__}: {error_str}\n")
                     return {
