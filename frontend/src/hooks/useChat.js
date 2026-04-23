@@ -134,7 +134,7 @@ export const useChat = (language = 'hindi') => {
   const getHistory = useCallback((msgs) =>
     msgs
       .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .slice(-10)
+      .slice(-6)   // 6 msgs = ~300 tokens vs 10 msgs = ~500 tokens
       .map((m) => ({
         role: m.role,
         content: stripLanguagePrefix(m.content),
